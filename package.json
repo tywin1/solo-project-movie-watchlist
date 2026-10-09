@@ -1,0 +1,8 @@
+{
+  "name": "solo-project-movie-watchlist",
+  "version": "1.0.0",
+  "scripts": {
+    "build": ""
+  },
+  "dependencies": {}
+}
