@@ -3,7 +3,7 @@ Scrimba solo project - Movie Watchlist
 Project breakdown -
 
 - Implemented HTML structure for main application and movie detail pages.
-- Created CSS styles for layout, theming, and responsive design.
+- Created CSS styles for layout, theming, and responsive design.  First time attempting to use root variables as well - so much cleaner.
 - Developed JavaScript functionality for searching movies and managing a watchlist from the OMDB API.
 - Integrated local storage for saving and retrieving the watchlist and a "Load More" button.
 - Added theme toggle functionality to switch between light and dark modes (New skill unlocked!)
