@@ -1,47 +1,71 @@
 import { getWatchlist, saveWatchlist } from './storage.js';
+import { el } from './layout.js';
+
 const main = document.querySelector('.main');
 const apiKey = 'c0932682';
 const movieId = new URLSearchParams(window.location.search).get('id');
 
 function renderStatus(message) {
-    main.innerHTML = `<div class="empty-state"><p class="empty-state__text">${message}</p></div>`;
+    main.replaceChildren(
+        el('div', { className: 'empty-state' }, [
+            el('p', { className: 'empty-state__text', text: message })
+        ])
+    );
 }
 
 function renderMovie(movie) {
-        const isSaved = getWatchlist().some(saved => saved.imdbID === movie.imdbID);
-        const poster = movie.Poster !== 'N/A' ? movie.Poster : './images/movie-icon.png';
-        const rottenTomatoes = movie.Ratings?.find(r => r.Source === 'Rotten Tomatoes')?.Value;
+    const isSaved = getWatchlist().some(saved => saved.imdbID === movie.imdbID);
+    const poster = movie.Poster !== 'N/A' ? movie.Poster : './images/movie-icon.png';
+    const rottenTomatoes = movie.Ratings?.find(r => r.Source === 'Rotten Tomatoes')?.Value;
 
-        main.innerHTML = `
-                <article class="movie-detail">
-                    <img class="movie-detail__poster" src="${poster}" alt="${movie.Title}">
-                    <div class="movie-detail__info">
-                        <h2 class="movie-detail__title">${movie.Title} <span>(${movie.Year})</span></h2>
-                        <p class="movie-detail__meta">${movie.Rated} · ${movie.Runtime} · ${movie.Genre}</p>
-                        <p class="movie-detail__ratings">
-                            <img class="movie-card__star" src="./images/star.png" alt="">
-                            ${movie.imdbRating} (${movie.imdbVotes} votes)
-                            ${rottenTomatoes ? ` · 🍅 ${rottenTomatoes}` : ''}
-                        </p>
-                        <button class="movie-card__watchlist" type="button" aria-pressed="${isSaved}">
-                            <span class="movie-card__watchlist-icon">${isSaved ? '✓' : '+'}</span>
-                            <span>${isSaved ? 'On Watchlist' : 'Watchlist'}</span>
-                        </button>
-                        <p class="movie-card__plot">${movie.Plot}</p>
-                        <dl class="movie-detail__facts">
-                            <dt>Director</dt><dd>${movie.Director}</dd>
-                            <dt>Writers</dt><dd>${movie.Writer}</dd>
-                            <dt>Cast</dt><dd>${movie.Actors}</dd>
-                            <dt>Released</dt><dd>${movie.Released}</dd>
-                            <dt>Language</dt><dd>${movie.Language}</dd>
-                            <dt>Country</dt><dd>${movie.Country}</dd>
-                            <dt>Awards</dt><dd>${movie.Awards}</dd>
-                            <dt>Box office</dt><dd>${movie.BoxOffice ?? 'N/A'}</dd>
-                        </dl>
-                    </div>
-                </article>
-            `;
-                main.querySelector('.movie-card__watchlist').addEventListener('click', () => toggleWatchlist(movie));
+    const facts = [
+        ['Director', movie.Director],
+        ['Writers', movie.Writer],
+        ['Cast', movie.Actors],
+        ['Released', movie.Released],
+        ['Language', movie.Language],
+        ['Country', movie.Country],
+        ['Awards', movie.Awards],
+        ['Box office', movie.BoxOffice ?? 'N/A'],
+    ].flatMap(([label, value]) => [
+        el('dt', { text: label }),
+        el('dd', { text: value }),
+    ]);
+
+    const watchlistButton = el('button', {
+        className: 'movie-card__watchlist',
+        type: 'button',
+        'aria-pressed': String(isSaved),
+    }, [
+        el('span', { className: 'movie-card__watchlist-icon', text: isSaved ? '✓' : '+' }),
+        el('span', { text: isSaved ? 'On Watchlist' : 'Watchlist' }),
+    ]);
+    watchlistButton.addEventListener('click', () => toggleWatchlist(movie));
+
+    main.replaceChildren(
+        el('article', { className: 'movie-detail' }, [
+            el('img', { className: 'movie-detail__poster', src: poster, alt: movie.Title }),
+            el('div', { className: 'movie-detail__info' }, [
+                el('h2', { className: 'movie-detail__title', text: `${movie.Title} ` }, [
+                    el('span', { text: `(${movie.Year})` }),
+                ]),
+                el('p', {
+                    className: 'movie-detail__meta',
+                    text: `${movie.Rated} · ${movie.Runtime} · ${movie.Genre}`,
+                }),
+                el('p', { className: 'movie-detail__ratings' }, [
+                    el('img', { className: 'movie-card__star', src: './images/star.png', alt: '' }),
+                    document.createTextNode(
+                        ` ${movie.imdbRating} (${movie.imdbVotes} votes)` +
+                        (rottenTomatoes ? ` · 🍅 ${rottenTomatoes}` : '')
+                    ),
+                ]),
+                watchlistButton,
+                el('p', { className: 'movie-card__plot', text: movie.Plot }),
+                el('dl', { className: 'movie-detail__facts' }, facts),
+            ]),
+        ])
+    );
 }
 
 function toggleWatchlist(movie) {
@@ -63,7 +87,7 @@ async function loadMovie() {
 
     try {
         const response = await fetch(
-        `https://www.omdbapi.com/?apikey=${apiKey}&i=${encodeURIComponent(movieId)}&plot=full`
+            `https://www.omdbapi.com/?apikey=${apiKey}&i=${encodeURIComponent(movieId)}&plot=full`
         );
         const movie = await response.json();
         if (movie.Response === 'False') throw new Error(movie.Error);
@@ -74,6 +98,7 @@ async function loadMovie() {
         renderStatus('Unable to load this movie.');
     }
 }
+
 loadMovie();
 
 

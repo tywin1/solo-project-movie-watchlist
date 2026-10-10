@@ -28,3 +28,49 @@ themeToggle.addEventListener('click', () => {
 
 syncToggleLabel(); // Initialize the toggle button label based on the current theme
 footerContainer.append(themeToggle); // Append the theme toggle button to the footer
+
+/* element renderer to avoid innerHTML use */
+export function el(tag, { className, text, ...attrs } = {}, children = []) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+    node.append(...children);
+    return node;
+}
+
+export function createMovieCard(movie, isSaved) {
+    const poster = movie.Poster !== 'N/A' ? movie.Poster : './images/movie-icon.png';
+    const href = `./movie.html?id=${encodeURIComponent(movie.imdbID)}`;
+ 
+    return el('div', { className: 'movie-card' }, [
+        el('a', { href }, [
+            el('img', { className: 'movie-card__image', src: poster, alt: movie.Title }),
+        ]),
+               el('div', { className: 'movie-card__content' }, [
+            el('div', { className: 'movie-card__header' }, [
+                el('div', { className: 'movie-card__score' }, [
+                    el('img', { className: 'movie-card__star', src: './images/star.png', alt: '' }),
+                    el('p', { className: 'movie-card__rating', text: movie.imdbRating }),
+                ]),
+                el('h2', { className: 'movie-card__title' }, [
+                    el('a', { href, text: movie.Title }),
+                ]),
+            ]),
+            el('div', { className: 'movie-card__details' }, [
+                el('p', { className: 'movie-card__runtime', text: movie.Runtime }),
+                el('p', { className: 'movie-card__genre', text: movie.Genre }),
+                el('button', {
+                    className: 'movie-card__watchlist',
+                    type: 'button',
+                    'data-movie-id': movie.imdbID,
+                    'aria-pressed': String(isSaved),
+                }, [
+                    el('span', { className: 'movie-card__watchlist-icon', text: isSaved ? '✓' : '+' }),
+                    el('span', { text: isSaved ? 'On Watchlist' : 'Watchlist' }),
+                ]),
+            ]),
+            el('p', { className: 'movie-card__plot', text: movie.Plot }),
+        ]),
+    ]);
+}
