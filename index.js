@@ -5,58 +5,67 @@ const elements = { // Cache DOM elements for later use
     main: document.querySelector('.main'),
     search: document.querySelector('.search'),
 };
+const apiKey = 'c0932682'; /* free tier key limited to 1000 requests/day */
+const apiUrl = 'https://www.omdbapi.com/';
 
 let currentMovies = []; // Store the currently displayed movies
 let visibleCount = 4; // display count for a search result - limited to 4 with a "load more" button
 const moviesPerLoad = 4; // as above
 
 function renderStatusState(message, isError = false) { // Render a status message in the main content area
-elements.main.replaceChildren(
-    el('div', { className: 'empty-state' }, [
-        el('img', { className: 'empty-state__image', src: './images/movie-icon.png', alt: 'Movie image' }),
-        el('p', {
-            className: `empty-state__text${isError ? ' empty-state__text--error' : ''}`,
-            text: message,
-        }),
-    ])
-);
+    elements.main.replaceChildren(
+        el('div', { className: 'empty-state' }, [
+            el('img', { className: 'empty-state__image', src: './images/movie-icon.png', alt: 'Movie image' }),
+            el('p', {
+                className: `empty-state__text${isError ? ' empty-state__text--error' : ''}`,
+                text: message,
+            }),
+        ])
+    );
+}
 renderStatusState('Start exploring'); // Initial status message
-
-const apiKey = 'c0932682';
 
 elements.search.addEventListener('submit', handleSearchClick); // Handle search form submission
 elements.main.addEventListener('click', handleWatchlistClick); // Handle watchlist button clicks
 
+let searchController; // aborts the previous search when a new one starts
+
 function handleSearchClick(event) {
     event.preventDefault();
 
-    const query = elements.search.querySelector('input').value.trim(); // Get the search query from the input field
+    const query = elements.search.querySelector('input').value.trim();
     if (!query) {
-        renderStatusState('Please enter a search query.', true); // Show error if search query is empty
+        renderStatusState('Please enter a search query.', true);
         return;
     }
 
-    fetch(`https://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(query)}`)
-    .then(response => response.json())
-    .then(data => {
-        if (!data.Search) { // Check if the search returned any results
-            throw new Error(data.Error); // Throw an error if no results found
-        }
-        return Promise.all( // Fetch detailed information for each movie in the search results
-            data.Search.map(movie =>
-                fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${movie.imdbID}`)
-                    .then(response => response.json())
-            )
-        );
-    })
-        .then(movies => {  // Handle the detailed movie data and render the movie cards
+    searchController?.abort();
+    searchController = new AbortController();
+    const { signal } = searchController;
+
+    const loadingTimer = setTimeout(() => renderStatusState('Finding movies...'), 300);
+
+    fetch(`${apiUrl}?apikey=${apiKey}&s=${encodeURIComponent(query)}`, { signal })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.Search) throw new Error(data.Error);
+            return Promise.all(
+                data.Search.map(movie =>
+                    fetch(`${apiUrl}?apikey=${apiKey}&i=${movie.imdbID}`, { signal })
+                        .then(response => response.json())
+                )
+            );
+        })
+        .then(movies => {
             currentMovies = movies;
             visibleCount = moviesPerLoad;
-            renderMovies()
+            renderMovies();
         })
         .catch(error => {
+            if (error.name === 'AbortError') return; // superseded by a newer search
             renderStatusState('Unable to find what you\'re looking for. Please try another search.', true);
-    });
+        })
+        .finally(() => clearTimeout(loadingTimer));
 }
 
 function handleWatchlistClick(event) {

@@ -26,7 +26,7 @@ main.addEventListener('click', event => {
     const button = event.target.closest('.movie-card__watchlist');
     if (!button?.dataset.movieId) return;
     
-    saveWatchlist(getWatchList().filter(movie => movie.imdbID !== button.dataset.movieId));
+    saveWatchlist(getWatchlist().filter(movie => movie.imdbID !== button.dataset.movieId));
     renderWatchlist();
 });
 

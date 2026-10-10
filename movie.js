@@ -2,7 +2,8 @@ import { getWatchlist, saveWatchlist } from './storage.js';
 import { el } from './layout.js';
 
 const main = document.querySelector('.main');
-const apiKey = 'c0932682';
+const apiKey = 'c0932682'; /* free tier key limited to 1000 requests/day */
+const apiUrl = 'https://www.omdbapi.com/';
 const movieId = new URLSearchParams(window.location.search).get('id');
 
 function renderStatus(message) {
@@ -85,9 +86,11 @@ async function loadMovie() {
         return;
     }
 
+    renderStatus('Loading movie details...');
+
     try {
         const response = await fetch(
-            `https://www.omdbapi.com/?apikey=${apiKey}&i=${encodeURIComponent(movieId)}&plot=full`
+            `${apiUrl}?apikey=${apiKey}&i=${encodeURIComponent(movieId)}&plot=full`
         );
         const movie = await response.json();
         if (movie.Response === 'False') throw new Error(movie.Error);
