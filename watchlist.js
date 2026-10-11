@@ -28,6 +28,10 @@ main.addEventListener('click', event => {
     
     saveWatchlist(getWatchlist().filter(movie => movie.imdbID !== button.dataset.movieId));
     renderWatchlist();
+
+    const remaining = main.querySelectorAll('.movie-card__watchlist');
+    const next = remaining[Math.min(index, remaining.length - 1)];
+    (next ?? main.querySelector('a'))?.focus();
 });
 
 renderWatchlist();

@@ -16,9 +16,8 @@ Specific things done above and beyond the original Scrimba project spec -
 - Footer
 - Load More button
 - Dark/light mode toggle
-
-To-do (no rush)
-
-- Change the method to render the content onto pages - currently implemented in an unsafe way
+- Changed the method to render the content onto pages - was implemented in an unsafe way (innerHTML)
 
 Took about a week and a half from beginning to end - tried to stick to minimum 1 hour per day + 3 hours on weekends.
+
+Tack on another 3-4 hours for the final fully polished version - I wanted to understand all the little things that should be done for a project to be completed at a professional level.  Plus I learned a lot more useful JavaScript/CSS things besides.

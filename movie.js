@@ -1,15 +1,16 @@
 import { getWatchlist, saveWatchlist } from './storage.js';
 import { el } from './layout.js';
+import { apiKey, apiUrl } from './config.js';
 
 const main = document.querySelector('.main');
-const apiKey = 'c0932682'; /* free tier key limited to 1000 requests/day */
-const apiUrl = 'https://www.omdbapi.com/';
 const movieId = new URLSearchParams(window.location.search).get('id');
 
 function renderStatus(message) {
     main.replaceChildren(
         el('div', { className: 'empty-state' }, [
-            el('p', { className: 'empty-state__text', text: message })
+            el('p', { className: 'empty-state__text', text: message,
+                role: 'status',
+            })
         ])
     );
 }
@@ -41,7 +42,7 @@ function renderMovie(movie) {
         el('span', { className: 'movie-card__watchlist-icon', text: isSaved ? '✓' : '+' }),
         el('span', { text: isSaved ? 'On Watchlist' : 'Watchlist' }),
     ]);
-    watchlistButton.addEventListener('click', () => toggleWatchlist(movie));
+    watchlistButton.addEventListener('click', () => toggleWatchlist(movie, watchlistButton));
 
     main.replaceChildren(
         el('article', { className: 'movie-detail' }, [
@@ -69,7 +70,7 @@ function renderMovie(movie) {
     );
 }
 
-function toggleWatchlist(movie) {
+function toggleWatchlist(movie, button) {
     const watchlist = getWatchlist();
     const isSaved = watchlist.some(saved => saved.imdbID === movie.imdbID);
     const updated = isSaved
@@ -77,7 +78,10 @@ function toggleWatchlist(movie) {
         : [...watchlist, movie];
 
     saveWatchlist(updated);
-    renderMovie(movie);
+
+    button.setAttribute('aria-pressed', String(!isSaved));
+    button.querySelector('.movie-card__watchlist-icon').textContent = !isSaved ? '✓' : '+';
+    button.querySelector('span:last-child').textContent = isSaved ? 'Watchlist' : 'On Watchlist';
 }
 
 async function loadMovie() {

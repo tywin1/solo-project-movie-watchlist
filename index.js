@@ -1,12 +1,11 @@
 import { getWatchlist, saveWatchlist } from './storage.js';
 import { el, createMovieCard } from './layout.js';
+import { apiKey, apiUrl } from './config.js';
 
 const elements = { // Cache DOM elements for later use
     main: document.querySelector('.main'),
     search: document.querySelector('.search'),
 };
-const apiKey = 'c0932682'; /* free tier key limited to 1000 requests/day */
-const apiUrl = 'https://www.omdbapi.com/';
 
 let currentMovies = []; // Store the currently displayed movies
 let visibleCount = 4; // display count for a search result - limited to 4 with a "load more" button
@@ -15,9 +14,10 @@ const moviesPerLoad = 4; // as above
 function renderStatusState(message, isError = false) { // Render a status message in the main content area
     elements.main.replaceChildren(
         el('div', { className: 'empty-state' }, [
-            el('img', { className: 'empty-state__image', src: './images/movie-icon.png', alt: 'Movie image' }),
+            el('img', { className: 'empty-state__image', src: './images/movie-icon.png', alt: '' }),
             el('p', {
                 className: `empty-state__text${isError ? ' empty-state__text--error' : ''}`,
+                role: 'status',
                 text: message,
             }),
         ])
@@ -35,6 +35,7 @@ function handleSearchClick(event) {
 
     const query = elements.search.querySelector('input').value.trim();
     if (!query) {
+        searchController?.abort();
         renderStatusState('Please enter a search query.', true);
         return;
     }
@@ -45,12 +46,13 @@ function handleSearchClick(event) {
 
     const loadingTimer = setTimeout(() => renderStatusState('Finding movies...'), 300);
 
-    fetch(`${apiUrl}?apikey=${apiKey}&s=${encodeURIComponent(query)}`, { signal })
+    fetch(`${apiUrl}?apikey=${apiKey}&type=movie&s=${encodeURIComponent(query)}`, { signal })
         .then(response => response.json())
         .then(data => {
             if (!data.Search) throw new Error(data.Error);
             return Promise.all(
-                data.Search.map(movie =>
+                data.Search.filter(m => m.Response !== false)
+                .map(movie =>
                     fetch(`${apiUrl}?apikey=${apiKey}&i=${movie.imdbID}`, { signal })
                         .then(response => response.json())
                 )
